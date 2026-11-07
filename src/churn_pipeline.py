@@ -275,6 +275,8 @@ Generated: {metrics["created_at"]}
 ## Notes
 
 The model is trained through an sklearn Pipeline with train-only fitting for imputation, scaling, and one-hot encoding. This keeps preprocessing consistent between training and API serving.
+
+Leakage audit: an earlier version generated satisfaction, complaints, support tickets, late payments and campaign conversions from the churn label, which inflated ROC-AUC to 0.99. Those generators now use only non-label signals (contract, tech support, payment method, tenure), and `tests/test_data_loader.py` fails if any derived feature changes when the label is flipped.
 """
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(content)

@@ -1,6 +1,6 @@
 # Churn Model Metrics
 
-Generated: 2026-05-02T22:55:38Z
+Generated: 2026-11-07T21:08:42Z
 
 ## Data Split
 
@@ -11,21 +11,23 @@ Generated: 2026-05-02T22:55:38Z
 
 ## Performance
 
-- ROC-AUC: 0.9905
-- PR-AUC: 0.9753
-- Brier score: 0.0338
-- Accuracy: 0.9588
-- Precision: 0.9438
-- Recall: 0.8984
-- F1: 0.9205
+- ROC-AUC: 0.8288
+- PR-AUC: 0.5999
+- Brier score: 0.1467
+- Accuracy: 0.7899
+- Precision: 0.6250
+- Recall: 0.5214
+- F1: 0.5685
 
 ## Confusion Matrix
 
 |                | Predicted Retained | Predicted Churn |
 |----------------|-------------------:|----------------:|
-| Actual Retained | 1015 | 20 |
-| Actual Churn    | 38 | 336 |
+| Actual Retained | 918 | 117 |
+| Actual Churn    | 179 | 195 |
 
 ## Notes
 
 The model is trained through an sklearn Pipeline with train-only fitting for imputation, scaling, and one-hot encoding. This keeps preprocessing consistent between training and API serving.
+
+Leakage audit: an earlier version generated satisfaction, complaints, support tickets, late payments and campaign conversions from the churn label, which inflated ROC-AUC to 0.99. Those generators now use only non-label signals (contract, tech support, payment method, tenure), and `tests/test_data_loader.py` fails if any derived feature changes when the label is flipped.

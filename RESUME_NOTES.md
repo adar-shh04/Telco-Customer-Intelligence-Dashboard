@@ -8,6 +8,10 @@ Telco Customer Intelligence Platform: Churn Prediction, Explainable Retention An
 
 ## Resume Bullets
 
+Quote the honest metric: held-out ROC-AUC 0.83 (PR-AUC 0.60). Never quote the old 0.99; it came from label leakage, which is now fixed and makes a good interview story.
+
+- Audited a 0.99 ROC-AUC, traced it to enrichment features generated from the churn label, removed the leak and added a label-flip regression test; honest held-out ROC-AUC 0.83 vs 0.81 for a raw-column baseline.
+
 Pick 2-3 depending on space:
 
 - Built an end-to-end telecom customer intelligence platform using Python, scikit-learn, SHAP, Streamlit, and FastAPI to predict churn, explain customer risk drivers, and recommend retention actions from IBM Telco customer data.

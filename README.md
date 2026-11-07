@@ -118,6 +118,21 @@ Stronger Data Scientist version:
 
 > Developed a churn and retention analytics system on IBM Telco customer data, engineering customer health, usage, payment, engagement, and campaign features; trained gradient boosting models, applied SHAP explainability, and translated predictions into ROI-ranked retention and next-best-offer recommendations.
 
+## Model Results
+
+Held-out test set (20%, stratified, 1,409 customers), from `reports/metrics.md`:
+
+| Metric | Value |
+|---|---|
+| ROC-AUC | 0.829 |
+| PR-AUC | 0.600 |
+| F1 (threshold 0.50) | 0.569 |
+| Baseline: gradient boosting on the original Kaggle columns only | ROC-AUC 0.811 |
+
+### Leakage audit
+
+An earlier version reported ROC-AUC 0.99. That number was wrong: the enrichment step generated `satisfaction_score`, `num_complaints_12m` (and `support_tickets_12m`, which includes it), `late_payments_12m` and `total_conversions` using the churn label, so the model was reading the answer. The generators now use only non-label signals (contract, tech support, payment method, tenure), and `tests/test_data_loader.py::test_derived_features_do_not_use_churn_label` fails if any derived feature changes when the label is flipped. The dashboard's Predictive Insights tab also now shows scores from the trained model instead of random numbers.
+
 ## Implemented Portfolio Improvements
 
 - Consolidated API-facing churn training into one reusable sklearn pipeline with saved model artifacts.
@@ -130,9 +145,11 @@ Stronger Data Scientist version:
 - Add model monitoring / drift tracking for the saved churn pipeline.
 - Replace simulated NBO labels with a clearly labeled propensity/eligibility framework or a real offer-response dataset.
 - Add GitHub Actions for tests and data schema validation.
+- NBO propensity models score ROC-AUC 0.48-0.70 on simulated labels; treat them as a demo of the decision logic, not as predictive models.
 
 ## Transparency Notes
 
 - The churn label comes from the Kaggle dataset.
 - Several customer 360 fields are derived for demonstration and feature engineering depth.
+- Derived fields are generated without the churn label (see Leakage audit), so any link between them and churn comes only through real Kaggle columns.
 - The NBO engine uses simulated conversion labels where real offer-response labels are unavailable. This is useful for a portfolio demo, but should be described honestly in interviews.

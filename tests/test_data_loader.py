@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import pandas as pd
 import sys
 import os
@@ -60,7 +61,7 @@ class TestDataLoader(unittest.TestCase):
             'campaigns_exposed', 'total_impressions', 'total_clicks',
             'total_conversions', 'primary_channel', 'monthly_web_sessions',
             'monthly_app_sessions', 'avg_session_duration_min',
-            'self_service_transactions', 'churned', 'churn_probability'
+            'self_service_transactions', 'churned'
         ]
         for col in required_cols:
             self.assertIn(col, master.columns, f"Missing column: {col}")
@@ -101,11 +102,32 @@ class TestDataLoader(unittest.TestCase):
             'Dependents': ['No', 'No', 'No']
         })
 
+        self.mock_df = mock_df
         demographics = self.loader.generate_customer_demographics(mock_df)
         self.assertEqual(len(demographics), 3)
         self.assertIn('customer_id', demographics.columns)
         self.assertIn('age', demographics.columns)
         self.assertTrue(demographics['age'].min() >= 18)
+
+    def test_derived_features_do_not_use_churn_label(self):
+        """Derived CRM/campaign features must not depend on the churn label (leakage guard)."""
+        self.test_demographics_columns()
+        base = self.mock_df
+        flipped = base.copy()
+        flipped['Churn_binary'] = 1 - flipped['Churn_binary']
+        flipped['Churn'] = np.where(flipped['Churn_binary'] == 1, 'Yes', 'No')
+
+        def derived(df):
+            np.random.seed(0)
+            demographics = self.loader.generate_customer_demographics(df)
+            np.random.seed(1)
+            crm = self.loader.generate_crm_data(df, demographics)
+            np.random.seed(2)
+            campaign = self.loader.generate_campaign_data(df, demographics)
+            return crm, campaign
+
+        for original, swapped in zip(derived(base), derived(flipped)):
+            pd.testing.assert_frame_equal(original, swapped)
 
 
 if __name__ == '__main__':

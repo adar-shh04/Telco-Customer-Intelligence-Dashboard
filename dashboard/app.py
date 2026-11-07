@@ -554,11 +554,15 @@ def create_predictive_insights(df):
     """Create predictive insights dashboard."""
     st.header("🔮 Predictive Insights")
     
-    st.info("This section shows simulated predictions. In production, this would use trained ML models.")
-    
-    # Simulate churn predictions
-    np.random.seed(42)
-    df['churn_probability'] = np.random.beta(2, 5, len(df))  # Simulated probabilities
+    # Score customers with the trained churn pipeline (train_model.py)
+    try:
+        from churn_pipeline import load_churn_artifact
+        artifact = load_churn_artifact()
+    except FileNotFoundError:
+        st.warning("Churn model not found. Run `python train_model.py` first.")
+        return
+    df['churn_probability'] = artifact['pipeline'].predict_proba(df[artifact['feature_columns']])[:, 1]
+    st.caption(f"Scores from the trained churn model (held-out ROC-AUC {artifact['metrics']['roc_auc']:.3f}).")
     
     # High-risk customers
     high_risk_threshold = 0.7
@@ -738,7 +742,8 @@ def create_revenue_simulator(df):
         df_ret = pd.read_csv(retention_path)
     else:
         df_ret = df.copy()
-        df_ret['ml_churn_probability'] = df['churned'] if 'churned' in df.columns else 0.26
+        # No model scores available: fall back to the portfolio churn rate, never the label itself
+        df_ret['ml_churn_probability'] = df['churned'].mean() if 'churned' in df.columns else 0.26
     
     # ===== BASELINE METRICS =====
     total_customers = len(df)

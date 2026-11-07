@@ -1,22 +1,22 @@
 {
   "threshold": 0.5,
-  "roc_auc": 0.9904931669637552,
-  "pr_auc": 0.975320926507921,
-  "brier_score": 0.033796454153841325,
-  "accuracy": 0.9588360539389638,
-  "precision": 0.9438202247191011,
-  "recall": 0.8983957219251337,
-  "f1": 0.9205479452054794,
+  "roc_auc": 0.8287788369629803,
+  "pr_auc": 0.5999430854532878,
+  "brier_score": 0.14672796553483314,
+  "accuracy": 0.7899219304471257,
+  "precision": 0.625,
+  "recall": 0.5213903743315508,
+  "f1": 0.5685131195335277,
   "confusion_matrix": {
-    "true_negative": 1015,
-    "false_positive": 20,
-    "false_negative": 38,
-    "true_positive": 336
+    "true_negative": 918,
+    "false_positive": 117,
+    "false_negative": 179,
+    "true_positive": 195
   },
   "training_records": 7043,
   "train_records": 5634,
   "test_records": 1409,
   "positive_rate": 0.2653698707936959,
   "model_type": "GradientBoostingClassifier",
-  "created_at": "2026-05-02T22:55:38Z"
+  "created_at": "2026-11-07T21:08:42Z"
 }

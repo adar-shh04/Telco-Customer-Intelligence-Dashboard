@@ -266,27 +266,27 @@ class TelecomDataLoader:
         Create CRM table derived from real Kaggle signals.
 
         Derives satisfaction_score, complaints, support tickets, payment info
-        from TechSupport, Contract, PaymentMethod, Churn, and tenure.
+        from TechSupport, Contract, PaymentMethod and tenure. The churn label is
+        deliberately NOT used here: any feature built from the label leaks the
+        answer into the model (it pushed ROC-AUC to 0.99).
         """
         print("Generating CRM data from real data...")
         n = len(df)
 
         # Derive satisfaction_score from real signals
-        # Base: 7.0, modified by Churn, Contract, TechSupport, tenure
+        # Base: 7.0, modified by Contract, TechSupport, tenure
         base_sat = 7.0
-        churn_effect = np.where(df['Churn_binary'] == 1, -2.0, 0.5)
         contract_effect = np.where(df['Contract'] == 'Two year', 1.0,
                           np.where(df['Contract'] == 'One year', 0.5, -0.5))
         tech_support_effect = np.where(df['TechSupport'] == 'Yes', 0.5, -0.3)
         tenure_effect = np.clip(df['tenure'] / 24, 0, 1.5)
         noise = np.random.normal(0, 0.8, n)
 
-        satisfaction = base_sat + churn_effect + contract_effect + tech_support_effect + tenure_effect + noise
+        satisfaction = base_sat + contract_effect + tech_support_effect + tenure_effect + noise
         satisfaction = np.clip(np.round(satisfaction, 1), 1.0, 10.0)
 
-        # Derive complaints from TechSupport, Churn, satisfaction
+        # Derive complaints from TechSupport
         complaint_rate = np.where(df['TechSupport'] == 'No', 0.3, 0.1)
-        complaint_rate = np.where(df['Churn_binary'] == 1, complaint_rate + 0.2, complaint_rate)
         num_complaints = np.random.poisson(complaint_rate * 3, n)
 
         # Derive support tickets
@@ -301,9 +301,8 @@ class TelecomDataLoader:
         payment_noise = np.random.normal(0, 40, n)
         payment_score = np.clip(base_payment + df['tenure'] * 1.5 + payment_noise, 300, 850).astype(int)
 
-        # Derive late payments from PaymentMethod + Churn
+        # Derive late payments from PaymentMethod
         late_rate = np.where(df['PaymentMethod'] == 'Electronic check', 0.4, 0.15)
-        late_rate = np.where(df['Churn_binary'] == 1, late_rate + 0.2, late_rate)
         late_payments = np.random.poisson(late_rate * 2, n)
 
         crm_data = pd.DataFrame({
@@ -343,8 +342,8 @@ class TelecomDataLoader:
               np.where(age > 55, 0.02, 0.03))
         total_clicks = np.random.binomial(total_impressions, ctr)
 
-        # Conversion rate from clicks
-        conv_rate = np.where(df['Churn_binary'] == 0, 0.12, 0.05)
+        # Conversion rate from clicks, by contract commitment (not the churn label)
+        conv_rate = np.where(df['Contract'] == 'Month-to-month', 0.06, 0.12)
         total_conversions = np.random.binomial(
             np.maximum(total_clicks, 0), conv_rate
         )
@@ -463,17 +462,10 @@ class TelecomDataLoader:
             else:
                 churn_dates.append(None)
 
-        # Churn probability derived from actual patterns
-        # (not used for prediction — just for descriptive analysis)
-        churn_prob = np.where(churned == 1,
-                              np.clip(np.random.beta(5, 2, n), 0.5, 0.95),
-                              np.clip(np.random.beta(2, 5, n), 0.01, 0.4))
-
         churn_data = pd.DataFrame({
             'customer_id': demographics['customer_id'].values,
             'churned': churned,
-            'churn_date': churn_dates,
-            'churn_probability': np.round(churn_prob, 3)
+            'churn_date': churn_dates
         })
 
         return churn_data
